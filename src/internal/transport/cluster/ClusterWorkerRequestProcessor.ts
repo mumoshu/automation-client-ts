@@ -41,7 +41,7 @@ import { MasterMessage, workerSend } from "./messages";
  */
 class ClusterWorkerRequestProcessor extends AbstractRequestProcessor {
 
-    private graphClients: GraphClientFactory;
+    private graphClientFactory: GraphClientFactory;
     private registration?: RegistrationConfirmation;
 
     // tslint:disable-next-line:variable-name
@@ -57,7 +57,7 @@ class ClusterWorkerRequestProcessor extends AbstractRequestProcessor {
     public setRegistration(registration: RegistrationConfirmation) {
         logger.debug("Receiving registration '%s'", stringify(registration));
         this.registration = registration;
-        this.graphClients = new GraphClientFactory(this.registration, this._options);
+        this.graphClientFactory = new GraphClientFactory();
     }
 
     public setRegistrationIfRequired(data: any) {
@@ -76,7 +76,12 @@ class ClusterWorkerRequestProcessor extends AbstractRequestProcessor {
 
     protected createGraphClient(event: CommandIncoming | EventIncoming,
                                 context: AutomationContextAware): GraphClient {
-        return this.graphClients.createGraphClient(event);
+        return this.graphClientFactory.createGraphClient(
+            event,
+            {
+                options: this._options,
+                headers: { Authorization: `Bearer ${this.registration.jwt}` },
+            });
     }
 
     protected createMessageClient(event: EventIncoming | CommandIncoming,

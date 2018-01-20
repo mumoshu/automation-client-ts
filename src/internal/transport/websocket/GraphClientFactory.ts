@@ -21,9 +21,11 @@ export class GraphClientFactory {
 
     private graphClients = new NodeCache({ stdTTL: 1 * 60, checkperiod: 1 * 30, useClones: false });
 
-    constructor(private registration: RegistrationConfirmation, private options: WebSocketClientOptions) { }
-
-    public createGraphClient(event: CommandIncoming | EventIncoming): GraphClient {
+    public createGraphClient(event: CommandIncoming | EventIncoming,
+                             config: {
+                                options: WebSocketClientOptions,
+                                 headers: { [name: string]: string },
+                            }): GraphClient {
         let teamId;
         if (isCommandIncoming(event)) {
             teamId = event.team.id;
@@ -34,15 +36,15 @@ export class GraphClientFactory {
         if (this.graphClients.get(teamId)) {
             logger.debug("Re-using cached graph client for team '%s'", teamId);
             return this.graphClients.get(teamId);
-        } else if (this.registration) {
+        } else if (config.options) {
             logger.debug("Creating new graph client for team '%s'", teamId);
-            const graphClient = new ApolloGraphClient(`${this.options.graphUrl}/${teamId}`,
-                { Authorization: `Bearer ${this.registration.jwt}` });
+            const graphClient = new ApolloGraphClient(`${config.options.graphUrl}/${teamId}`, config.headers);
             this.graphClients.set(teamId, graphClient);
             return graphClient;
+        } else {
+            logger.debug("Unable to create graph client for team '%s' and registration '$s'",
+                teamId, stringify(config));
+            return null;
         }
-        logger.debug("Unable to create graph client for team '%s' and registration '$s'",
-            teamId, stringify(this.registration));
-        return null;
     }
 }

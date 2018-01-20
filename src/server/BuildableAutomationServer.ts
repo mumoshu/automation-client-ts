@@ -234,11 +234,6 @@ export class BuildableAutomationServer extends AbstractAutomationServer {
             }
         }
 
-        // if the bot sends any of them, then only use those?
-        // it does not fallback for each parameter; all or nothing.
-        // this is probably by design ... is there a test/dev circumstance where
-        // mappedParameters is not populated?
-
         const mrResolver = invocation.mappedParameters ?
             new InvocationSecretResolver(invocation.mappedParameters) :
             this.fallbackSecretResolver;

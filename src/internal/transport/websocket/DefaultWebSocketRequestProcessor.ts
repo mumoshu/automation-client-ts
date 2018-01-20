@@ -33,7 +33,7 @@ import {
 export class DefaultWebSocketRequestProcessor extends AbstractRequestProcessor
     implements WebSocketRequestProcessor {
 
-    private graphClients: GraphClientFactory;
+    private graphClientFactory: GraphClientFactory;
     private registration?: RegistrationConfirmation;
     private webSocket?: WebSocket;
 
@@ -55,7 +55,7 @@ export class DefaultWebSocketRequestProcessor extends AbstractRequestProcessor
         logger.info("Registration successful: %s", stringify(registration));
         global.setJwtToken(registration.jwt);
         this.registration = registration;
-        this.graphClients = new GraphClientFactory(this.registration, this.options);
+        this.graphClientFactory = new GraphClientFactory();
     }
 
     public onConnect(ws: WebSocket) {
@@ -76,7 +76,12 @@ export class DefaultWebSocketRequestProcessor extends AbstractRequestProcessor
     }
 
     protected createGraphClient(event: CommandIncoming | EventIncoming): GraphClient {
-        return this.graphClients.createGraphClient(event);
+        return this.graphClientFactory.createGraphClient(
+            event,
+            {
+                options: this.options,
+                headers: { Authorization: `Bearer ${this.registration.jwt}` },
+            });
     }
 
     protected createMessageClient(event: CommandIncoming | EventIncoming): MessageClient {
